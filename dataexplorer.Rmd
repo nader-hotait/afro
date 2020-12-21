@@ -1,0 +1,339 @@
+---
+title: "Afrozensus Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    social: menu
+    source_code: embed
+    theme: journal
+runtime: shiny
+---
+
+```{r setup, include=FALSE, message=FALSE}
+require(flexdashboard)
+require(rpivotTable)
+require(dplyr)
+require(ggplot2)
+require(htmlwidgets)
+require(plotly)
+require(gridExtra)
+require(grid)
+require(stringr)
+df <- readRDS("dataAZ_synth.RDS")
+```
+
+Datentafel
+=====================================
+```{r}
+varSelectInput("variables", "Variablen:", df, multiple = TRUE)
+
+renderRpivotTable({df %>% dplyr::select(!!!input$variables) %>% rpivotTable(df, aggregatorName = "Count", rendererName = "Table")})
+```
+
+Demografie
+=====================================
+
+Column
+-----------------------------------------------------------------------
+
+### Bivariate Verteilung (Bar Graph)
+
+```{r}
+fluidRow(column(4,
+selectInput(inputId="vars_1", label="Variable", choices=names(df[,c(680:866)]))),
+
+column(4, selectInput(inputId="vars_2", label="Gegenueber...", choices=names(df[,c(680:866)]))))
+
+renderPlotly({
+  dem1 <- ggplot(df, aes(x=as.factor(!!as.name(input$vars_1)), fill=as.factor(!!as.name(input$vars_2)))) +
+  geom_bar(position="fill", stat="count") +
+  theme_minimal() +
+  ylab("Prozent") +
+  xlab("") +
+  scale_x_discrete(label = function(x) stringr::str_trunc(x, 12)) +
+  theme(legend.title = element_blank(), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+  dem1 <- ggplotly(dem1, height = 750)
+  dem1
+  })
+```
+
+Column {.tabset .tabset-fade}
+-----------------------------------------------------------------------
+### Histogramme (Univariat)
+```{r}
+renderPlotly({
+dem2<-  ggplotly(ggplot(df, aes(as.factor(!!as.name(input$vars_1)))) + geom_bar() + ylab("Haeufigkeit") + scale_x_discrete(label = function(x) stringr::str_trunc(x, 12)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)))
+
+dem3 <- ggplotly(ggplot(df, aes(as.factor(!!as.name(input$vars_2)))) + geom_bar() + ylab("Haeufigkeit") + scale_x_discrete(label = function(x) stringr::str_trunc(x, 12)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)))
+
+subplot(list(dem2,dem3), nrows=2, shareY=TRUE, margin = 0.07)
+})
+```
+
+### Kreisdiagramme (Univariat)
+```{r}
+renderPlot({
+dem4<-  ggplot(df, aes(x="", y=as.factor(!!as.name(input$vars_1)), fill=as.factor(!!as.name(input$vars_1)))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  theme(legend.title = element_blank())
+
+dem5 <- ggplot(df, aes(x="", y=as.factor(!!as.name(input$vars_2)), fill=as.factor(!!as.name(input$vars_2)))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  theme(legend.title = element_blank())
+
+grid.arrange(dem4, dem5, ncol = 1)
+})
+```
+
+Engagement
+=====================================
+
+Column
+-----------------------------------------------------------------------
+
+### Bivariate Verteilung (Bar Graph)
+
+```{r}
+fluidRow(column(4,
+selectInput(inputId="vars_eng1", label="Variable", choices=names(df[,c(4:55)]))),
+
+column(4, selectInput(inputId="vars_eng2", label="Gegenueber...", choices=names(df[,c(680:866)]))))
+
+renderPlotly({
+  dem1 <- ggplot(df, aes(x=as.factor(!!as.name(input$vars_eng1)), fill=as.factor(!!as.name(input$vars_eng2)))) +
+  geom_bar(position="fill", stat="count") +
+  theme_minimal() +
+  ylab("Prozent") +
+  xlab("") +
+  scale_x_discrete(label = function(x) stringr::str_trunc(x, 12)) +
+  theme(legend.title = element_blank(), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+  dem1 <- ggplotly(dem1, height = 750)
+  dem1
+  })
+```
+
+Column {.tabset .tabset-fade}
+-----------------------------------------------------------------------
+### Histogramme (Univariat)
+```{r}
+renderPlotly({
+dem2<-  ggplotly(ggplot(df, aes(as.factor(!!as.name(input$vars_eng1)))) + geom_bar() + ylab("Haeufigkeit") + scale_x_discrete(label = function(x) stringr::str_trunc(x, 12)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)))
+
+dem3 <- ggplotly(ggplot(df, aes(as.factor(!!as.name(input$vars_eng2)))) + geom_bar() + ylab("Haeufigkeit") + scale_x_discrete(label = function(x) stringr::str_trunc(x, 12)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)))
+
+subplot(list(dem2,dem3), nrows=2, shareY=TRUE, margin = 0.07)
+})
+```
+
+### Kreisdiagramme (Univariat)
+```{r}
+renderPlot({
+dem4<-  ggplot(df, aes(x="", y=as.factor(!!as.name(input$vars_eng1)), fill=as.factor(!!as.name(input$vars_eng1)))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  theme(legend.title = element_blank())
+
+dem5 <- ggplot(df, aes(x="", y=as.factor(!!as.name(input$vars_eng2)), fill=as.factor(!!as.name(input$vars_eng2)))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  theme(legend.title = element_blank())
+
+grid.arrange(dem4, dem5, ncol = 1)
+})
+```
+
+
+Diskriminierungserfahrungen
+=====================================
+
+Column
+-----------------------------------------------------------------------
+
+### Bivariate Verteilung (Bar Graph)
+
+```{r}
+fluidRow(column(4,
+selectInput(inputId="vars_disk1", label="Variable", choices=names(df[,c(56:595)]))),
+
+column(4, selectInput(inputId="vars_disk2", label="Gegenueber...", choices=names(df[,c(680:866)]))))
+
+renderPlotly({
+  dem1 <- ggplot(df, aes(x=as.factor(!!as.name(input$vars_disk1)), fill=as.factor(!!as.name(input$vars_disk2)))) +
+  geom_bar(position="fill", stat="count") +
+  theme_minimal() +
+  ylab("Prozent") +
+  xlab("") +
+  scale_x_discrete(label = function(x) stringr::str_trunc(x, 12)) +
+  theme(legend.title = element_blank(), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+  dem1 <- ggplotly(dem1, height = 750)
+  dem1
+  })
+```
+
+Column {.tabset .tabset-fade}
+-----------------------------------------------------------------------
+### Histogramme (Univariat)
+```{r}
+renderPlotly({
+dem2<-  ggplotly(ggplot(df, aes(as.factor(!!as.name(input$vars_disk1)))) + geom_bar() + ylab("Haeufigkeit") + scale_x_discrete(label = function(x) stringr::str_trunc(x, 12)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)))
+
+dem3 <- ggplotly(ggplot(df, aes(as.factor(!!as.name(input$vars_disk2)))) + geom_bar() + ylab("Haeufigkeit") + scale_x_discrete(label = function(x) stringr::str_trunc(x, 12)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)))
+
+subplot(list(dem2,dem3), nrows=2, shareY=TRUE, margin = 0.07)
+})
+```
+
+### Kreisdiagramme (Univariat)
+```{r}
+renderPlot({
+dem4<-  ggplot(df, aes(x="", y=as.factor(!!as.name(input$vars_disk1)), fill=as.factor(!!as.name(input$vars_disk1)))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  theme(legend.title = element_blank())
+
+dem5 <- ggplot(df, aes(x="", y=as.factor(!!as.name(input$vars_disk2)), fill=as.factor(!!as.name(input$vars_disk2)))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  theme(legend.title = element_blank())
+
+grid.arrange(dem4, dem5, ncol = 1)
+})
+```
+
+
+Wissen (Rechte & Institutionen)
+=====================================
+
+Column
+-----------------------------------------------------------------------
+
+### Bivariate Verteilung (Bar Graph)
+
+```{r}
+fluidRow(column(4,
+selectInput(inputId="vars_wiss1", label="Variable", choices=names(df[,c(597:637)]))),
+
+column(4, selectInput(inputId="vars_wiss2", label="Gegenueber...", choices=names(df[,c(680:866)]))))
+
+renderPlotly({
+  dem1 <- ggplot(df, aes(x=as.factor(!!as.name(input$vars_wiss1)), fill=as.factor(!!as.name(input$vars_wiss2)))) +
+  geom_bar(position="fill", stat="count") +
+  theme_minimal() +
+  ylab("Prozent") +
+  xlab("") +
+  scale_x_discrete(label = function(x) stringr::str_trunc(x, 12)) +
+  theme(legend.title = element_blank(), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+  dem1 <- ggplotly(dem1, height = 750)
+  dem1
+  })
+```
+
+Column {.tabset .tabset-fade}
+-----------------------------------------------------------------------
+### Histogramme (Univariat)
+```{r}
+renderPlotly({
+dem2<-  ggplotly(ggplot(df, aes(as.factor(!!as.name(input$vars_wiss1)))) + geom_bar() + ylab("Haeufigkeit") + scale_x_discrete(label = function(x) stringr::str_trunc(x, 12)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)))
+
+dem3 <- ggplotly(ggplot(df, aes(as.factor(!!as.name(input$vars_wiss2)))) + geom_bar() + ylab("Haeufigkeit") + scale_x_discrete(label = function(x) stringr::str_trunc(x, 12)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)))
+
+subplot(list(dem2,dem3), nrows=2, shareY=TRUE, margin = 0.07)
+})
+```
+
+### Kreisdiagramme (Univariat)
+```{r}
+renderPlot({
+dem4<-  ggplot(df, aes(x="", y=as.factor(!!as.name(input$vars_wiss1)), fill=as.factor(!!as.name(input$vars_wiss1)))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  theme(legend.title = element_blank())
+
+dem5 <- ggplot(df, aes(x="", y=as.factor(!!as.name(input$vars_wiss2)), fill=as.factor(!!as.name(input$vars_wiss2)))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  theme(legend.title = element_blank())
+
+grid.arrange(dem4, dem5, ncol = 1)
+})
+```
+
+
+
+Diskriminierung & Handlungsbedarfe
+=====================================
+
+Column
+-----------------------------------------------------------------------
+
+### Bivariate Verteilung (Bar Graph)
+
+```{r}
+fluidRow(column(4,
+selectInput(inputId="vars_bed1", label="Variable", choices=names(df[,c(639:678)]))),
+
+column(4, selectInput(inputId="vars_bed2", label="Gegenueber...", choices=names(df[,c(680:866)]))))
+
+renderPlotly({
+  dem1 <- ggplot(df, aes(x=as.factor(!!as.name(input$vars_bed1)), fill=as.factor(!!as.name(input$vars_bed2)))) +
+  geom_bar(position="fill", stat="count") +
+  theme_minimal() +
+  ylab("Prozent") +
+  xlab("") +
+  scale_x_discrete(label = function(x) stringr::str_trunc(x, 12)) +
+  theme(legend.title = element_blank(), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+  dem1 <- ggplotly(dem1, height = 750)
+  dem1
+  })
+```
+
+Column {.tabset .tabset-fade}
+-----------------------------------------------------------------------
+### Histogramme (Univariat)
+```{r}
+renderPlotly({
+dem2<-  ggplotly(ggplot(df, aes(as.factor(!!as.name(input$vars_bed1)))) + geom_bar() + ylab("Haeufigkeit") + scale_x_discrete(label = function(x) stringr::str_trunc(x, 12)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)))
+
+dem3 <- ggplotly(ggplot(df, aes(as.factor(!!as.name(input$vars_bed2)))) + geom_bar() + ylab("Haeufigkeit") + scale_x_discrete(label = function(x) stringr::str_trunc(x, 12)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)))
+
+subplot(list(dem2,dem3), nrows=2, shareY=TRUE, margin = 0.07)
+})
+```
+
+### Kreisdiagramme (Univariat)
+```{r}
+renderPlot({
+dem4<-  ggplot(df, aes(x="", y=as.factor(!!as.name(input$vars_bed1)), fill=as.factor(!!as.name(input$vars_bed1)))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  theme(legend.title = element_blank())
+
+dem5 <- ggplot(df, aes(x="", y=as.factor(!!as.name(input$vars_bed2)), fill=as.factor(!!as.name(input$vars_bed2)))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  theme_void() + 
+  theme(legend.title = element_blank())
+
+grid.arrange(dem4, dem5, ncol = 1)
+})
+```
